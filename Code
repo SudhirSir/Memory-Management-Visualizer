@@ -1,0 +1,155 @@
+import tkinter as tk
+from tkinter import messagebox, simpledialog, ttk
+import random
+import time
+import matplotlib.pyplot as plt
+
+# Memory parameters
+MEMORY_SIZE = 8  # Default number of memory slots
+PAGE_TABLE = []   # Stores pages currently in memory
+PAGE_USAGE = {}   # Tracks last used time for LRU
+PAGE_FAULTS = 0  # Count page faults
+PAGE_SEQUENCE = []  # Stores user-defined page sequence
+PAGE_FAULT_HISTORY = []
+
+# Page Replacement Algorithms
+def fifo_page_replacement(new_page):
+    global PAGE_TABLE, PAGE_FAULTS
+    if new_page in PAGE_TABLE:
+        return  # No page fault
+    if len(PAGE_TABLE) >= MEMORY_SIZE:
+        PAGE_TABLE.pop(0)  # Remove oldest page (FIFO policy)
+    PAGE_TABLE.append(new_page)
+    PAGE_FAULTS += 1
+    PAGE_FAULT_HISTORY.append(PAGE_FAULTS)
+    update_visualization()
+
+def lru_page_replacement(new_page):
+    global PAGE_TABLE, PAGE_USAGE, PAGE_FAULTS
+    if new_page in PAGE_TABLE:
+        PAGE_USAGE[new_page] = len(PAGE_USAGE)  # Update usage
+        return  # No page fault
+    if len(PAGE_TABLE) >= MEMORY_SIZE:
+        lru_page = min(PAGE_USAGE, key=PAGE_USAGE.get)
+        PAGE_TABLE.remove(lru_page)
+        del PAGE_USAGE[lru_page]
+    PAGE_TABLE.append(new_page)
+    PAGE_USAGE[new_page] = len(PAGE_USAGE)
+    PAGE_FAULTS += 1
+    PAGE_FAULT_HISTORY.append(PAGE_FAULTS)
+    update_visualization()
+
+def optimal_page_replacement(new_page):
+    global PAGE_TABLE, PAGE_FAULTS
+    if new_page in PAGE_TABLE:
+        return  # No page fault
+    if len(PAGE_TABLE) >= MEMORY_SIZE:
+        future_use = {page: (PAGE_SEQUENCE.index(page) if page in PAGE_SEQUENCE else float('inf')) for page in PAGE_TABLE}
+        farthest_page = max(future_use, key=future_use.get)
+        PAGE_TABLE.remove(farthest_page)
+    PAGE_TABLE.append(new_page)
+    PAGE_FAULTS += 1
+    PAGE_FAULT_HISTORY.append(PAGE_FAULTS)
+    update_visualization()
+
+# GUI Setup
+def update_visualization():
+    canvas.delete("all")
+    colors = ["#FF6347", "#4682B4", "#32CD32", "#FFD700", "#8A2BE2"]
+    for i, page in enumerate(PAGE_TABLE):
+        x1, y1 = 50, 50 + i * 50
+        x2, y2 = 250, 100 + i * 50
+        canvas.create_rectangle(x1, y1, x2, y2, fill=random.choice(colors), outline="black", width=2)
+        canvas.create_text((x1 + x2) / 2, (y1 + y2) / 2, text=str(page), font=("Arial", 16, "bold"))
+    page_fault_label.config(text=f"Page Faults: {PAGE_FAULTS}")
+
+def simulate_page_request():
+    new_page = random.randint(1, 10) if not PAGE_SEQUENCE else PAGE_SEQUENCE.pop(0)
+    if algo_var.get() == "FIFO":
+        fifo_page_replacement(new_page)
+    elif algo_var.get() == "LRU":
+        lru_page_replacement(new_page)
+    else:
+        optimal_page_replacement(new_page)
+    messagebox.showinfo("Page Request", f"Requested Page: {new_page}")
+
+def set_memory_size():
+    global MEMORY_SIZE
+    size = simpledialog.askinteger("Memory Size", "Enter memory size:", minvalue=1, maxvalue=20)
+    if size:
+        MEMORY_SIZE = size
+        reset_simulation()
+
+def set_page_sequence():
+    global PAGE_SEQUENCE
+    sequence = simpledialog.askstring("Page Sequence", "Enter page sequence (comma-separated):")
+    if sequence:
+        PAGE_SEQUENCE = list(map(int, sequence.split(",")))
+
+def reset_simulation():
+    global PAGE_TABLE, PAGE_USAGE, PAGE_FAULTS, PAGE_FAULT_HISTORY
+    PAGE_TABLE.clear()
+    PAGE_USAGE.clear()
+    PAGE_FAULTS = 0
+    PAGE_FAULT_HISTORY.clear()
+    update_visualization()
+
+def animate_page_requests():
+    for _ in range(len(PAGE_SEQUENCE)):
+        simulate_page_request()
+        root.update()
+        time.sleep(1)
+
+def show_graph():
+    plt.figure(figsize=(8, 5))
+    plt.plot(range(1, len(PAGE_FAULT_HISTORY) + 1), PAGE_FAULT_HISTORY, marker='o', linestyle='-', color='blue')
+    plt.xlabel("Page Requests")
+    plt.ylabel("Page Faults")
+    plt.title("Page Fault Analysis")
+    plt.grid(True)
+    plt.show()
+
+# Create GUI window
+root = tk.Tk()
+root.title("Memory Management Visualizer")
+root.geometry("700x800")
+root.configure(bg="#f0f0f0")
+
+algo_var = tk.StringVar(value="FIFO")
+canvas = tk.Canvas(root, width=500, height=500, bg="white", relief="solid", borderwidth=2)
+canvas.pack(pady=20)
+
+frame = ttk.Frame(root)
+frame.pack()
+
+btn_request = ttk.Button(frame, text="Request Page", command=simulate_page_request)
+btn_request.pack(side=tk.LEFT, padx=10)
+
+btn_animate = ttk.Button(frame, text="Auto Animate", command=animate_page_requests)
+btn_animate.pack(side=tk.LEFT, padx=10)
+
+algo_menu = ttk.Combobox(frame, textvariable=algo_var, values=("FIFO", "LRU", "Optimal"))
+algo_menu.pack(side=tk.LEFT, padx=10)
+
+page_fault_label = ttk.Label(root, text=f"Page Faults: {PAGE_FAULTS}", font=("Arial", 14, "bold"))
+page_fault_label.pack(pady=10)
+
+config_frame = ttk.Frame(root)
+config_frame.pack()
+
+btn_set_size = ttk.Button(config_frame, text="Set Memory Size", command=set_memory_size)
+btn_set_size.pack(side=tk.LEFT, padx=10)
+
+btn_set_sequence = ttk.Button(config_frame, text="Set Page Sequence", command=set_page_sequence)
+btn_set_sequence.pack(side=tk.LEFT, padx=10)
+
+btn_reset = ttk.Button(root, text="Reset Simulation", command=reset_simulation)
+btn_reset.pack(pady=10) 
+
+btn_graph = ttk.Button(root, text="Show Graph", command=show_graph)
+btn_graph.pack(pady=10)
+
+btn_exit = ttk.Button(root, text="Exit", command=root.quit)
+btn_exit.pack(pady=10)
+
+root.mainloop()
