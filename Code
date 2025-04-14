@@ -4,6 +4,7 @@ import random
 import time
 import matplotlib.pyplot as plt
 
+
 # Memory parameters
 MEMORY_SIZE = 8  # Default number of memory slots
 PAGE_TABLE = []   # Stores pages currently in memory
