@@ -26,6 +26,7 @@ def fifo_page_replacement(new_page):
     PAGE_FAULT_HISTORY.append(PAGE_FAULTS)
     update_visualization()
 
+
 def lru_page_replacement(new_page):
     global PAGE_TABLE, PAGE_USAGE, PAGE_FAULTS
     if new_page in PAGE_TABLE:
