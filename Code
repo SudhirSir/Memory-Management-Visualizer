@@ -90,6 +90,7 @@ def set_page_sequence():
     if sequence:
         PAGE_SEQUENCE = list(map(int, sequence.split(",")))
 
+
 def reset_simulation():
     global PAGE_TABLE, PAGE_USAGE, PAGE_FAULTS, PAGE_FAULT_HISTORY
     PAGE_TABLE.clear()
