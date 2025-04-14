@@ -13,6 +13,7 @@ PAGE_FAULTS = 0  # Count page faults
 PAGE_SEQUENCE = []  # Stores user-defined page sequence
 PAGE_FAULT_HISTORY = []
 
+
 # Page Replacement Algorithms
 def fifo_page_replacement(new_page):
     global PAGE_TABLE, PAGE_FAULTS
